@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import AmountRecipe, Favorite, Ingredient, Purchase, Recipe, Tag
+from .models import (
+    AmountRecipe,
+    Favorite,
+    Ingredient,
+    Purchase,
+    Recipe,
+    RecipeTag,
+    Tag,
+)
 
 
 class IngredientAdmin(admin.ModelAdmin):
@@ -10,6 +18,7 @@ class IngredientAdmin(admin.ModelAdmin):
         'measurement_unit',
     )
     search_fields = ('name',)
+    list_filter = ('name',)
 
 
 class FavoriteAdmin(admin.ModelAdmin):
@@ -21,6 +30,15 @@ class PurchaseAdmin(admin.ModelAdmin):
 
 
 class RecipeAdmin(admin.ModelAdmin):
+    fields = (
+        'author',
+        'name',
+        'text',
+        'show_ingredients',
+        'show_tags',
+        'cooking_time',
+        'count_favorite',
+    )
     list_display = (
         'pk',
         'author',
@@ -29,14 +47,24 @@ class RecipeAdmin(admin.ModelAdmin):
         'show_ingredients',
         'show_tags',
         'cooking_time',
+        'count_favorite',
     )
-    search_fields = ('name', 'author')
 
     def show_ingredients(self, obj):
         return "\n".join([a.name for a in obj.ingredients.all()])
 
     def show_tags(self, obj):
         return "\n".join([a.name for a in obj.tags.all()])
+
+    def count_favorite(self, obj):
+        return Favorite.objects.filter(recipes=obj).count()
+
+    search_fields = ('name', 'author')
+    list_filter = ('author', 'name', 'tags')
+    readonly_fields = ['show_ingredients', 'show_tags', 'count_favorite']
+    count_favorite.short_description = 'Количество добавления в избранное'
+    show_ingredients.short_description = 'Ингредиенты'
+    show_tags.short_description = 'Теги'
 
 
 class TagAdmin(admin.ModelAdmin):
@@ -58,9 +86,14 @@ class AmountRecipeAdmin(admin.ModelAdmin):
     )
 
 
+class RecipeTagAdmin(admin.ModelAdmin):
+    list_display = ('pk', 'recipe', 'tag')
+
+
 admin.site.register(Ingredient, IngredientAdmin)
 admin.site.register(Recipe, RecipeAdmin)
 admin.site.register(Tag, TagAdmin)
 admin.site.register(Favorite, FavoriteAdmin)
 admin.site.register(Purchase, PurchaseAdmin)
 admin.site.register(AmountRecipe, AmountRecipeAdmin)
+admin.site.register(RecipeTag, RecipeTagAdmin)

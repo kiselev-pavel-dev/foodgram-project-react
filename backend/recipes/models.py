@@ -1,5 +1,3 @@
-from tkinter import Y
-
 from django.db import models
 from users.models import User
 
@@ -50,6 +48,7 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
         related_name='recipes',
+        through='RecipeTag',
         verbose_name='Теги',
     )
     cooking_time = models.IntegerField('Время приготовления (в минутах)')
@@ -63,12 +62,43 @@ class Recipe(models.Model):
         return self.name
 
 
+class RecipeTag(models.Model):
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='recipe_tags',
+        verbose_name='Рецепт',
+    )
+    tag = models.ForeignKey(
+        Tag,
+        on_delete=models.CASCADE,
+        related_name='recipe_tags',
+        verbose_name='Тег',
+    )
+
+    class Meta:
+        ordering = ['-pk']
+        verbose_name = 'Тег рецепта'
+        verbose_name_plural = 'Теги рецепта'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'tag'], name='unique_recipe_tag'
+            ),
+        ]
+
+
 class AmountRecipe(models.Model):
     recipe = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE, related_name='recipes'
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='amount_recipes',
+        verbose_name='Рецепт',
     )
     ingredient = models.ForeignKey(
-        Ingredient, on_delete=models.CASCADE, related_name='ingredients'
+        Ingredient,
+        on_delete=models.CASCADE,
+        related_name='amount_recipes',
+        verbose_name='Ингредиент',
     )
     amount = models.IntegerField('Количество')
 
@@ -85,10 +115,16 @@ class AmountRecipe(models.Model):
 
 class Favorite(models.Model):
     user = models.ForeignKey(
-        User, on_delete=models.CASCADE, related_name='favorites'
+        User,
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Пользователь',
     )
     recipes = models.ForeignKey(
-        Recipe, on_delete=models.CASCADE, related_name='favorites'
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Рецепт',
     )
 
     class Meta:
