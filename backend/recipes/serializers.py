@@ -1,7 +1,7 @@
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
-from users.serializers import UserSerializerList
 
+from users.serializers import UserSerializerList
 from .models import (
     AmountRecipe,
     Favorite,
@@ -13,6 +13,12 @@ from .models import (
 )
 
 ERROR_AMOUNT_VALUE = 'Количество ингредиента должно быть больше нуля!'
+ERROR_COOKING_TIME = 'Время приготовления должно быть больше нуля!'
+ERROR_COUNT_TAGS = 'Невозможно создать рецепт без тегов!'
+ERROR_COUNT_INGREDIENTS = 'Невозможно создать рецепт без ингредиентов!'
+ERROR_UNIQUE_TAGS = 'Теги в рецепте должны быть уникальными!'
+ERROR_UNIQUE_INGREDIENTS = 'Ингредиенты в рецепте должны быть уникальными!'
+ERROR_AMOUNT = 'Количество ингредиента должно быть больше 1!'
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -124,6 +130,24 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
+    def validate(self, attrs):
+        if attrs['cooking_time'] < 1:
+            raise serializers.ValidationError(ERROR_COOKING_TIME)
+        if len(attrs['tags']) == 0:
+            raise serializers.ValidationError(ERROR_COUNT_TAGS)
+        if len(attrs['amount_recipes']) == 0:
+            raise serializers.ValidationError(ERROR_COUNT_INGREDIENTS)
+        if len(attrs['tags']) > len(set(attrs['tags'])):
+            raise serializers.ValidationError(ERROR_UNIQUE_TAGS)
+        ingredients = []
+        for ingredient in attrs['amount_recipes']:
+            if ingredient['amount'] < 1:
+                raise serializers.ValidationError(ERROR_AMOUNT)
+            ingredients.append(ingredient['id'])
+        if len(ingredients) > len(set(ingredients)):
+            raise serializers.ValidationError(ERROR_UNIQUE_INGREDIENTS)
+        return attrs
+
     def get_is_favorited(self, obj):
         current_user = self.context.get('request').user.pk
         return Favorite.objects.filter(
@@ -136,35 +160,37 @@ class RecipeWriteSerializer(serializers.ModelSerializer):
             user=current_user, recipes=obj.pk
         ).exists()
 
+    def add_ingredients(self, recipe, ingredients):
+        ingredients_list = []
+        for ingredient in ingredients:
+            ingredient_temp = Ingredient.objects.get(pk=ingredient['id'])
+            ingredients_list.append(
+                AmountRecipe(
+                    recipe=recipe,
+                    ingredient=ingredient_temp,
+                    amount=ingredient['amount'],
+                )
+            )
+        return AmountRecipe.objects.bulk_create(ingredients_list)
+
     def create(self, validated_data):
         author = self.context.get('request').user
         tags = validated_data.pop('tags')
         ingredients = validated_data.pop('amount_recipes')
         recipe = Recipe.objects.create(author=author, **validated_data)
+        tag_list = []
         for tag in tags:
-            RecipeTag.objects.create(recipe=recipe, tag=tag)
-
+            tag_list.append(RecipeTag(recipe=recipe, tag=tag))
+        RecipeTag.objects.bulk_create(tag_list)
         ingredients = self.context['request'].data['ingredients']
-        for ingredient in ingredients:
-            ingredient_temp = Ingredient.objects.get(pk=ingredient['id'])
-            AmountRecipe.objects.create(
-                recipe=recipe,
-                ingredient=ingredient_temp,
-                amount=ingredient['amount'],
-            )
+        self.add_ingredients(recipe, ingredients)
         return recipe
 
     def update(self, instance, validated_data):
         ingredients = validated_data.pop('amount_recipes')
         ingredients = self.context['request'].data['ingredients']
         AmountRecipe.objects.filter(recipe=instance).delete()
-        for ingredient in ingredients:
-            ingredient_temp = Ingredient.objects.get(pk=ingredient['id'])
-            AmountRecipe.objects.create(
-                recipe=instance,
-                ingredient=ingredient_temp,
-                amount=ingredient['amount'],
-            )
+        self.add_ingredients(instance, ingredients)
         tags = validated_data.pop('tags')
         instance.tags.set(tags)
         instance.name = validated_data.get('name', instance.name)

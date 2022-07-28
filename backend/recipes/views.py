@@ -49,8 +49,6 @@ class RecipesViewSet(ModelViewSet):
             return RecipeWriteSerializer
         return RecipeSerializer
 
-    def perform_create(self, serializer):
-        return serializer.save(author=self.request.user)
 
 
 class FavoriteViewSet(ModelViewSet):

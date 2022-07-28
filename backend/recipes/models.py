@@ -1,5 +1,10 @@
+from django.core.validators import MinValueValidator
 from django.db import models
+
 from users.models import User
+
+ERROR_TIME_COOKING = 'Время приготовления должно быть больше 1 минуты!'
+ERROR_AMOUNT = 'Количество ингредиента должно быть больше 1!'
 
 
 class Tag(models.Model):
@@ -51,7 +56,10 @@ class Recipe(models.Model):
         through='RecipeTag',
         verbose_name='Теги',
     )
-    cooking_time = models.IntegerField('Время приготовления (в минутах)')
+    cooking_time = models.IntegerField(
+        'Время приготовления (в минутах)',
+        validators=[MinValueValidator(1, ERROR_TIME_COOKING)],
+    )
 
     class Meta:
         ordering = ['-pk']
@@ -100,11 +108,13 @@ class AmountRecipe(models.Model):
         related_name='amount_recipes',
         verbose_name='Ингредиент',
     )
-    amount = models.IntegerField('Количество')
+    amount = models.IntegerField(
+        'Количество', validators=[MinValueValidator(1, ERROR_AMOUNT)]
+    )
 
     class Meta:
         ordering = ['-pk']
-        verbose_name = 'Количество ингридиента'
+        verbose_name = 'Количество ингредиента'
         verbose_name_plural = 'Количество ингредиентов'
         constraints = [
             models.UniqueConstraint(
