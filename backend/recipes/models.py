@@ -1,4 +1,3 @@
-from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from django.db import models
 
@@ -69,15 +68,6 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name
-
-    # def clean(self):
-    #     print(self)
-    #     if not self.ingredients:
-    #         raise ValidationError(self.ingredients)
-
-    # def save(self, *args, **kwargs):
-    #     self.full_clean()
-    #     return super().save(*args, **kwargs)
 
 
 class RecipeTag(models.Model):
