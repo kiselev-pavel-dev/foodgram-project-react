@@ -1,8 +1,9 @@
+from djoser.serializers import UserCreateSerializer, UserSerializer
 from drf_extra_fields.fields import Base64ImageField
 from rest_framework import serializers
+from rest_framework.serializers import SerializerMethodField
 
-from users.serializers import UserSerializerList
-from .models import (
+from recipes.models import (
     AmountRecipe,
     Favorite,
     Ingredient,
@@ -11,6 +12,7 @@ from .models import (
     RecipeTag,
     Tag,
 )
+from users.models import Subscription, User
 
 ERROR_AMOUNT_VALUE = 'Количество ингредиента должно быть больше нуля!'
 ERROR_COOKING_TIME = 'Время приготовления должно быть больше нуля!'
@@ -19,6 +21,92 @@ ERROR_COUNT_INGREDIENTS = 'Невозможно создать рецепт бе
 ERROR_UNIQUE_TAGS = 'Теги в рецепте должны быть уникальными!'
 ERROR_UNIQUE_INGREDIENTS = 'Ингредиенты в рецепте должны быть уникальными!'
 ERROR_AMOUNT = 'Количество ингредиента должно быть больше 1!'
+
+
+class UserSerializerList(UserSerializer):
+    is_subscribed = SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+        )
+
+    def get_is_subscribed(self, obj):
+        current_user = self.context.get('request').user.pk
+        return Subscription.objects.filter(
+            author=obj.pk, subscriber=current_user
+        ).exists()
+
+
+class CustomUserCreateSerializer(UserCreateSerializer):
+    class Meta(UserCreateSerializer.Meta):
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'password',
+        )
+
+
+class SubscriptionSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(source='author.email')
+    username = serializers.CharField(source='author.username')
+    id = serializers.IntegerField(source='author.pk')
+    first_name = serializers.CharField(source='author.first_name')
+    last_name = serializers.CharField(source='author.last_name')
+    is_subscribed = serializers.SerializerMethodField()
+    recipes = serializers.SerializerMethodField()
+    recipes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Subscription
+        fields = (
+            'email',
+            'id',
+            'username',
+            'first_name',
+            'last_name',
+            'is_subscribed',
+            'recipes',
+            'recipes_count',
+        )
+
+    def get_is_subscribed(self, obj):
+        current_user = self.context.get('request').user.pk
+        return Subscription.objects.filter(
+            author=obj.author, subscriber=current_user
+        ).exists()
+
+    def get_recipes(self, obj):
+        recipes = obj.author.recipes.all()
+        return RecipeShortSerializer(recipes, many=True).data
+
+    def get_recipes_count(self, obj):
+        return obj.author.recipes.count()
+
+
+class SubscribeAddSerializer(serializers.ModelSerializer):
+    subscriber = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all()
+    )
+    author = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+
+    class Meta:
+        model = Subscription
+        fields = '__all__'
+
+    def to_representation(self, instance):
+        request = self.context.get('request')
+        context = {'request': request}
+        return SubscriptionSerializer(instance, context=context).data
 
 
 class TagSerializer(serializers.ModelSerializer):

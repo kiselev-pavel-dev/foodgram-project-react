@@ -2,15 +2,8 @@ from django import forms
 from django.contrib import admin
 from django.forms.models import BaseInlineFormSet
 
-from .models import (
-    AmountRecipe,
-    Favorite,
-    Ingredient,
-    Purchase,
-    Recipe,
-    RecipeTag,
-    Tag,
-)
+from .models import (AmountRecipe, Favorite, Ingredient, Purchase, Recipe,
+                     RecipeTag, Tag)
 
 ERROR_ADD_RECIPE_NO_VALUE = 'Добавьте хотя бы 1 значение!'
 
