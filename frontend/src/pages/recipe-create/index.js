@@ -8,21 +8,22 @@ import MetaTags from 'react-meta-tags'
 
 const RecipeCreate = ({ onEdit }) => {
   const { value, handleChange, setValue } = useTags()
-  const [ recipeName, setRecipeName ] = useState('')
+  const [recipeName, setRecipeName] = useState('')
   const history = useHistory()
-  const [ ingredientValue, setIngredientValue ] = useState({
+  const [ingredientValue, setIngredientValue] = useState({
     name: '',
     id: null,
     amount: '',
     measurement_unit: ''
   })
-  const [ recipeIngredients, setRecipeIngredients ] = useState([])
-  const [ recipeText, setRecipeText ] = useState('')
-  const [ recipeTime, setRecipeTime ] = useState('')
-  const [ recipeFile, setRecipeFile ] = useState(null)
+  const [recipeIngredients, setRecipeIngredients] = useState([])
 
-  const [ ingredients, setIngredients ] = useState([])
-  const [ showIngredients, setShowIngredients ] = useState(false)
+  const [recipeText, setRecipeText] = useState('')
+  const [recipeTime, setRecipeTime] = useState('')
+  const [recipeFile, setRecipeFile] = useState(null)
+
+  const [ingredients, setIngredients] = useState([])
+  const [showIngredients, setShowIngredients] = useState(false)
   useEffect(_ => {
     if (ingredientValue.name === '') {
       return setIngredients([])
@@ -52,12 +53,12 @@ const RecipeCreate = ({ onEdit }) => {
 
   const checkIfDisabled = () => {
     return recipeText === '' ||
-    recipeName === '' ||
-    recipeIngredients.length === 0 ||
-    value.filter(item => item.value).length === 0 ||
-    recipeTime === '' ||
-    recipeFile === '' ||
-    recipeFile === null
+      recipeName === '' ||
+      recipeIngredients.length === 0 ||
+      value.filter(item => item.value).length === 0 ||
+      recipeTime === '' ||
+      recipeFile === '' ||
+      recipeFile === null
   }
 
   return <Main>
@@ -84,29 +85,29 @@ const RecipeCreate = ({ onEdit }) => {
             image: recipeFile
           }
           api
-          .createRecipe(data)
-          .then(res => {
-            history.push(`/recipes/${res.id}`)
-          })
-          .catch(err => {
-            const { non_field_errors, ingredients, cooking_time } = err
-            if (non_field_errors) {
-              return alert(non_field_errors.join(', '))
-            }
-            if (ingredients) {
-              return alert(`Ингредиенты: ${ingredients.filter(item => Object.keys(item).length).map(item => {
-                const error = item[Object.keys(item)[0]]
-                return error && error.join(' ,')
-              })[0]}`)
-            }
-            if (cooking_time) {
-              return alert(`Время готовки: ${cooking_time[0]}`)
-            }
-            const errors = Object.values(err)
-            if (errors) {
-              alert(errors.join(', '))
-            }
-          })
+            .createRecipe(data)
+            .then(res => {
+              history.push(`/recipes/${res.id}`)
+            })
+            .catch(err => {
+              const { non_field_errors, ingredients, cooking_time } = err
+              if (non_field_errors) {
+                return alert(non_field_errors.join(', '))
+              }
+              if (ingredients) {
+                return alert(`Ингредиенты: ${ingredients.filter(item => Object.keys(item).length).map(item => {
+                  const error = item[Object.keys(item)[0]]
+                  return error && error.join(' ,')
+                })[0]}`)
+              }
+              if (cooking_time) {
+                return alert(`Время готовки: ${cooking_time[0]}`)
+              }
+              const errors = Object.values(err)
+              if (errors) {
+                alert(errors.join(', '))
+              }
+            })
         }}
       >
         <Input
