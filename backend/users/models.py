@@ -13,6 +13,7 @@ class User(AbstractUser, PermissionsMixin):
         'Имя',
         max_length=150,
     )
+
     last_name = models.CharField('Фамилия', max_length=150)
     is_superuser = models.BooleanField('Администратор', default=False)
 
