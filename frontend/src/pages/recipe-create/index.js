@@ -17,7 +17,6 @@ const RecipeCreate = ({ onEdit }) => {
     measurement_unit: ''
   })
   const [recipeIngredients, setRecipeIngredients] = useState([])
-
   const [recipeText, setRecipeText] = useState('')
   const [recipeTime, setRecipeTime] = useState('')
   const [recipeFile, setRecipeFile] = useState(null)
