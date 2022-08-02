@@ -40,7 +40,7 @@ class UserViewSet(ReadOnlyModelViewSet):
 
 class SubscriptionViewSet(ModelViewSet):
     serializer_class = SubscriptionSerializer
-    pagination_class = PageNumberPagination
+    pagination_class = None
     permission_classes = (permissions.IsAuthenticated,)
 
     def get_queryset(self):
